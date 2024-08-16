@@ -31,29 +31,6 @@ async function generateAccessToken() {
 exports.createOrder = async () => {
   const accessToken = await generateAccessToken();
 
-  // const response = await axios.post(
-  //   process.env.PAYPAL_BASE_URL + "/v2/checkout/orders",
-  //   {
-  //     intent: "CAPTURE",
-  //     purchase_units: [
-  //       {
-  //         amount: {
-  //           currency_code: "USD",
-  //           value: "100.00",
-  //         },
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${accessToken}`,
-  //     },
-  //   }
-  // );
-
-  // return response.data.links[1].href;
-
   const response = await axios({
     url: process.env.PAYPAL_BASE_URL + "/v2/checkout/orders",
     method: "post",
@@ -73,7 +50,7 @@ exports.createOrder = async () => {
                 currency_code: "USD",
                 value: "100.00",
               },
-              quantity: "1",
+              quantity: 1,
             },
           ],
           amount: {
@@ -94,11 +71,26 @@ exports.createOrder = async () => {
         cancel_url: process.env.BASE_URL + "/cancel-order",
         shipping_preference: "NO_SHIPPING",
         user_action: "PAY_NOW",
-        brand_name: "manfra.io",
+        brand_name: "leodevs",
       },
     }),
   });
-  console.log(response.data);
+
+  return response.data.links.find((link) => link.rel === "approve").href;
 };
 
-this.createOrder();
+// this.createOrder().then((result) => console.log(result));
+
+exports.capturePayment = async (orderId) => {
+  const accessToken = await generateAccessToken();
+  const response = await axios({
+    url: process.env.PAYPAL_BASE_URL + "/v2/checkout/orders/" + orderId + "/capture",
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+  });
+
+  return response.data;
+};
